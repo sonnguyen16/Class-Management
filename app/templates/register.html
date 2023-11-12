@@ -1,37 +1,39 @@
 {% extends "base.html" %} {% block content %}
 <div class="container py-5">
   <h1 class="text-center">Register</h1>
-  <div class="row mx-auto w-50">
-    <form id="formRegister" method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="mb-3 form-group">
-        <label for="fullName" class="form-label">Full Name</label>
-        <input type="text" class="form-control" name="fullname" id="fullname" aria-describedby="emailHelp" />
-      </div>
-      <div class="mb-3 form-group">
-        <label for="dateOfBirth" class="form-label">Date of Birth </label>
-        <input type="date" class="form-control" name="date_of_birth" id="date_of_birth" />
-      </div>
-      <div class="mb-2 form-group">
-        <label for="avatar" class="form-label">Face ID</label>
-        <input type="file" accept="image/*" class="form-control" name="avatar" id="avatar" multiple />
-        <p class="form-text mb-0">Maximum: 3 images or 1 capture. Only select images or capture</p>
-      </div>
-      <div id="or" class="mb-2">
-        <label>or</label>
-      </div>
-      <div class="mb-1">
-        <div class="d-flex">
-          <button id="capture-btn" class="btn btn-success">Capture</button>
-          <button type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-link text-decoration-none mb-0">
-            View tutorial capture
-          </button>
+  <div class="row">
+    <div class="col-lg-6 mx-auto">
+      <form id="formRegister" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3 form-group">
+          <label for="fullName" class="form-label">Full Name</label>
+          <input type="text" class="form-control" name="fullname" id="fullname" aria-describedby="emailHelp" />
         </div>
-        <input type="hidden" name="capture_link" name="capture_link" id="capture-link" value="" />
-        <img src="" id="capture-img" class="rounded-3 shadow object-fit-cover w-100 my-3" style="max-height: 400px" alt="" />
-      </div>
-      <button type="submit" class="btn btn-primary form-control">Register</button>
-    </form>
+        <div class="mb-3 form-group">
+          <label for="dateOfBirth" class="form-label">Date of Birth </label>
+          <input type="date" class="form-control" name="date_of_birth" id="date_of_birth" />
+        </div>
+        <div class="mb-2 form-group">
+          <label for="avatar" class="form-label">Face ID</label>
+          <input type="file" accept="image/*" class="form-control" name="avatar" id="avatar" multiple />
+          <p class="form-text mb-0">Maximum: 3 images or 1 capture. Only select images or capture</p>
+        </div>
+        <div id="or" class="mb-2">
+          <label>or</label>
+        </div>
+        <div class="mb-1">
+          <div class="d-flex">
+            <button id="capture-btn" class="btn btn-success">Capture</button>
+            <button type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-link text-decoration-none mb-0">
+              View tutorial capture
+            </button>
+          </div>
+          <input type="hidden" name="capture_link" name="capture_link" id="capture-link" value="" />
+          <img src="" id="capture-img" class="rounded-3 shadow object-fit-cover w-100 my-3" style="max-height: 400px" alt="" />
+        </div>
+        <button type="submit" class="btn btn-primary form-control">Register</button>
+      </form>
+    </div>
   </div>
 </div>
 <!-- Modal -->

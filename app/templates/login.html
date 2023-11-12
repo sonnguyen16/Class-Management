@@ -1,7 +1,11 @@
 {% extends "base.html" %} {% block content %}
 <div class="container py-5">
   <h1 class="text-center mb-5">Login with face id</h1>
-  <a href="/login" class="btn btn-primary form-control w-50 mx-auto d-block mb-3">Login</a>
-  <p class="text-center">Don't have FaceID ? <a href="/register" class="">Register</a></p>
+  <div class="row">
+    <div class="col-lg-6 mx-auto">
+      <a href="/login" class="btn btn-primary form-control d-block mb-3">Login</a>
+      <p class="text-center">Don't have FaceID ? <a href="/register" class="">Register</a></p>
+    </div>
+  </div>
 </div>
 {% endblock content %} {% block script %} {% endblock script %}
