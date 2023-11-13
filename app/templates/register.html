@@ -84,7 +84,7 @@
         success: function (response) {
           $("#capture-link").val(response);
           let file_name = response.split("\\").pop();
-          $("#capture-img").attr("src", `{% static 'data/${file_name}' %});
+          $("#capture-img").attr("src", "../static/data/" + file_name);
         },
         error: function (error) {
           console.log(error);
