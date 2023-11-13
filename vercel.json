@@ -17,12 +17,12 @@
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/vercel/path0/staticfiles/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
       "dest": "project/wsgi.py"
     }
   ],
-  "outputDirectory": "staticfiles"
+  "outputDirectory": "app/staticfiles"
 }
