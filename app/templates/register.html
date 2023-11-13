@@ -49,11 +49,11 @@
           <li>1. Click vào nút capture</li>
           <li>
             2. Mở webcam từ bên dưới thanh taskbar
-            <img src="../static/img/taskbar.png" class="rounded w-100 mt-2" alt="" />
+            <img src="{% static 'img/taskbar.png' %}" class="rounded w-100 mt-2" alt="" />
           </li>
           <li>
             3. Đưa mặt cho đến khi hiện khung hình
-            <img src="../static/img/turtorial.jpg" class="rounded w-100 mt-2" alt="" />
+            <img src="{% static 'img/turtorial.jpg' %}" class="rounded w-100 mt-2" alt="" />
           </li>
           <li>4. Nhấn phím F để chụp</li>
         </ul>
@@ -84,7 +84,7 @@
         success: function (response) {
           $("#capture-link").val(response);
           let file_name = response.split("\\").pop();
-          $("#capture-img").attr("src", "../static/data/" + file_name);
+          $("#capture-img").attr("src", `{% static 'data/${file_name}' %});
         },
         error: function (error) {
           console.log(error);
