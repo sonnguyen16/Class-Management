@@ -148,7 +148,7 @@ def register(request):
             return JsonResponse(
                 {
                     'status': '422',
-                    'message': 'Images are already registered'
+                    'message': 'Person are already registered'
                 }
             )
         
