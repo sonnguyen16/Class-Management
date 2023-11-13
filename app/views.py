@@ -27,8 +27,6 @@ sdk = FR(BACKEND_URL, DEVELOPER_KEY)
 data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'data')
 cascade_path = os.path.join(data_folder, 'haarcascade_frontalface_default.xml')
 clf = cv2.CascadeClassifier(str(cascade_path))
-print(cascade_path)
-
 
 def index(request):
     return render(request, 'login.html')
