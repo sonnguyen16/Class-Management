@@ -13,6 +13,7 @@ import cv2
 from datetime import datetime
 from PIL import Image
 from io import BytesIO
+import threading
 
 # Define the region, and developer key
 # SG: "https://sg.opencv.fr"
@@ -35,7 +36,15 @@ def comparison(frame):
     search_request = SearchRequest([frame],collection_id=None,search_mode= SearchMode.FAST, min_score=0.7)
     result = sdk.search.search(search_request)
     return result
+
+scans = []
+
+def detect(frame):
+    detect_request_without_search = DetectionRequest(frame)
+    scans = sdk.search.detect(detect_request_without_search) 
+    return scans
      
+
 def login(request):
     capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     detect = False
@@ -53,15 +62,15 @@ def login(request):
         faces = clf.detectMultiScale(
             frame,
             scaleFactor=1.1,
-            minNeighbors=8,
+            minNeighbors=7,
             minSize=(80, 80),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
         if len(faces) > 0:
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.putText(frame, 'Welcome! ' + unidecode (name) , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, message, (10,70), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                cv2.putText(frame, unidecode (name) , (x,y - 20), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(frame, message, (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         cv2.imshow('Login with FaceID', frame)
         
 
@@ -109,7 +118,6 @@ def register(request):
                     'message': 'Please upload or capture at least 1 image'
                 }
             )
-        
         
         if len(images) > 1:
             for i in range(len(images) - 1):  

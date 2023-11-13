@@ -80,12 +80,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, "app/staticfiles")
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
-        'USER': 'postgres',
-        'PASSWORD': '-2E*52*3DEcGg5gAfBC1-FFGBCa6F21d',
-        'HOST': 'monorail.proxy.rlwy.net',
-        'PORT': '42050',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
