@@ -9,7 +9,7 @@ from django.contrib.auth.forms import UserChangeForm
 
 class CustomUserAdmin(admin.ModelAdmin):
     model = User
-    list_display = ('email', 'get_role')
+    list_display = ('id', 'email', 'get_role')
     add_form_template = 'admin/auth/user/add_form.html'
     add_fieldsets = (
         (None, {

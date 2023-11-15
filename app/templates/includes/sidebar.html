@@ -5,17 +5,17 @@
   </div>
 
   <div class="profile">
-    <img src="{% static 'images/pic-1.jpg' %}" class="image" alt="" />
-    <h3 class="name">Nguyễn Văn Sơn</h3>
-    <p class="role">Student</p>
+    <img src="{{ request.session.user.avatar_url }}" class="image object-fit-cover" style="width: 120px; height: 120px; border-radius: 50%" alt="" />
+    <h3 class="name">{{ request.session.user.full_name }}</h3>
+    <p class="role">{% if request.session.user.role == 0 %} Teacher {% else %} Student {% endif %}</p>
     <a href="profile.html" class="btn">view profile</a>
   </div>
 
   <nav class="navbar d-flex flex-column align-items-baseline">
-    <a class="nav-link" href="home.html"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
-    <a class="nav-link" href="courses.html"><i class="fas fa-graduation-cap nav-icon"></i><span>Attendance</span></a>
-    <a class="nav-link" href="teachers.html"><i class="fas fa-chalkboard-user nav-icon"></i><span>Homework</span></a>
-    <a class="nav-link" href="contact.html"><i class="fas fa-headset nav-icon"></i><span>Contact us</span></a>
-    <a class="nav-link" href="about.html"><i class="fas fa-book nav-icon"></i><span>About us</span></a>
+    <a class="nav-link" href="/"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+    <a class="nav-link" href="/attendance"><i class="fas fa-graduation-cap nav-icon"></i><span>Attendance</span></a>
+    <a class="nav-link" href=""><i class="fas fa-chalkboard-user nav-icon"></i><span>Homework</span></a>
+    <a class="nav-link" href=""><i class="fas fa-headset nav-icon"></i><span>Contact us</span></a>
+    <a class="nav-link" href=""><i class="fas fa-book nav-icon"></i><span>About us</span></a>
   </nav>
 </div>

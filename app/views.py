@@ -14,7 +14,9 @@ from datetime import datetime
 from PIL import Image
 from io import BytesIO
 import asyncio
-import concurrent.futures 
+import concurrent.futures
+from .serializers import UserSerializer, AttendanceSerializer
+import json
 
 # Define the region, and developer key
 # SG: "https://sg.opencv.fr"
@@ -31,12 +33,18 @@ cascade_path = os.path.join(data_folder, 'haarcascade_frontalface_default.xml')
 clf = cv2.CascadeClassifier(str(cascade_path))
 
 def index(request):
-    return render(request, 'pages/index.html')
+    if request.session['user']:
+        return render(request, 'pages/index.html')
+    return HttpResponseRedirect('/login')
 
 def comparison(frame):
     search_request = SearchRequest([frame],collection_id=None,search_mode= SearchMode.FAST, min_score=0.7)
     result = sdk.search.search(search_request)
     return result
+
+def logout(request):
+    request.session['user'] = None
+    return HttpResponseRedirect('/login')
 
 scans = []
 
@@ -53,19 +61,31 @@ def detect_in_executor(frame):
 
 def loginFaceId(request):
     if request.method == 'POST':
+        user_serializer = UserSerializer()
+        attendance_serializer = AttendanceSerializer()
         global scans
         names = []
         capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         count = 0
+        scan = []
         detect = False
         with concurrent.futures.ThreadPoolExecutor() as executor:
             while True:
                 ret, frame = capture.read()
+                key = cv2.waitKey(1)
+                if key == ord('f'):
+                    # Save frame as image
+                    data_folder = os.path.join(settings.BASE_DIR, 'app/static/uploads/attendances')
+                    new_path = os.path.join(data_folder, str(time.time()) + '.jpg')
+                    cv2.imwrite(new_path, frame)
+                    break
                 if len(scans) > 0:
                     for scan in scans:
                         cv2.rectangle(frame, (scan.box.left, scan.box.top), (scan.box.right, scan.box.bottom), (0, 255, 0), 2)
                         if len(scan.persons) > 0:
                             detect = True
+                            scan = scan
+                            cv2.putText(frame, "Press 'F' to continue" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
                             for person in scan.persons:
                                 cv2.putText(frame, unidecode(person.person.name), (scan.box.left, scan.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
                         else:
@@ -78,23 +98,31 @@ def loginFaceId(request):
                 if count % 60 == 0:
                     executor.submit(detect_in_executor, frame)
                 count += 1
-                
-                key = cv2.waitKey(1)
-                if key == ord('f'):
-                    break
 
         cv2.destroyAllWindows()
         capture.release()
         if detect == False:
             return HttpResponseRedirect('/register')
-        return render(request, 'pages/index.html')
+        user = user_serializer.get_user_by_opencvid(scan.persons[0].person.id)
+        request.session['user'] = user
+        attendance = {
+            'image': new_path.split('project\\')[1],
+            'user': user_serializer.get_user(user['id']),
+            'time': datetime.now()
+        }
+        attendance_serializer.create(attendance)
+        return HttpResponseRedirect('/')
 
 def login(request):
     return render(request, 'pages/login.html')
 
 def register(request):
     if request.method == 'POST':
-        fullname = request.POST['fullname']
+        user_serializer = UserSerializer()
+        full_name = request.POST['full_name']
+        email = request.POST['email']
+        password = request.POST['password']
+        role = request.POST['role']
         date_of_birth = datetime.strptime(request.POST['date_of_birth'], "%Y-%m-%d")
         nationality = "Vietnamese"
         images = []
@@ -156,29 +184,64 @@ def register(request):
                     'message': 'Person are already registered'
                 }
             )
-        
+       
+        data_folder = os.path.join(settings.BASE_DIR, 'app/static/uploads/avatar')
+        avatar = full_name + str(time.time()) + '.jpg'
+        new_path = os.path.join(data_folder, avatar)
+        if capture_link:
+            new_path = capture_link.split('project\\')[1]
+        else:
+            with open(new_path, 'wb') as f:
+                for chunk in request.FILES['avatar'].chunks():
+                    f.write(chunk)
+
+            im = Image.open(new_path)
+            im.save(new_path)
+            new_path = new_path.split('project\\')[1]
+
         try:
             person = PersonBase(
-                name=fullname,
+                name=full_name,
                 date_of_birth=date_of_birth,
                 nationality=nationality,
                 images=images
             )
-            sdk.persons.create(person)
+            result = sdk.persons.create(person)
+        except Exception as e:
             return JsonResponse(
                 {
-                    'status': '200',
-                    'message': 'Register successfully'
+                    'status': '422',
+                    'message': e
                 }
             )
-        except:
+        
+        try:
+            user = {
+                'full_name': full_name,
+                'email': email,
+                'password': password,
+                'role': role,
+                'date_of_birth': date_of_birth,
+                'avatar': new_path,
+                'opencv_id': result.id
+            }
+            user_serializer.create(user)
+        except Exception as e:
+            error = str(e)
+            json_error = json.dumps(error)
             return JsonResponse(
                 {
-                    'status': '500',
-                    'message': 'Register failed'
+                    'status': '422',
+                    'message': json_error.replace('"', '')
                 }
             )
-
+        request.session['user'] = user_serializer.get_user_by_opencvid(result.id)
+        return JsonResponse(
+            {
+                'status': '200',
+                'message': 'Register successfully'
+            }
+        )
     return render(request, 'pages/register.html')
 
 def capture(request):
@@ -210,10 +273,14 @@ def capture(request):
             cv2.putText(frame, "Put your face in the webcam" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         cv2.imshow('Register FaceID', frame)
 
-
     cv2.destroyAllWindows()
     capture.release()
     return HttpResponse(new_path)
+
+def attendance(request):
+    attendance_serializer = AttendanceSerializer()
+    attendances = attendance_serializer.get_attendance()
+    return render(request, 'pages/attendance.html', {'attendances': attendances})
 
 
 

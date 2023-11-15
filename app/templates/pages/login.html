@@ -1,6 +1,6 @@
 {% extends "layouts/auth.html" %} {% block content %} {% load static %}
 <section class="form-container flex-column">
-  <form action="/login" method="post" class="pb-3">
+  <form action="/login" method="post" class="pb-3 shadow" style="border-bottom-left-radius: 0px; border-bottom-right-radius: 0px">
     {% csrf_token %}
     <h3>login now</h3>
     <div class="form-group">
@@ -14,7 +14,7 @@
     <input type="submit" value="login" name="submit" class="btn" />
     <p class="text-center mt-3 mb-0">or login with Face ID</p>
   </form>
-  <form action="/login/faceid" method="post" class="pt-0">
+  <form action="/login/faceid" method="post" class="pt-0 shadow" style="border-top-left-radius: 0px; border-top-right-radius: 0px">
     {% csrf_token %}
     <button class="btn bg-success">Face ID</button>
     <p class="text-center">Don't have an account ? <a href="/register" class="">Register</a></p>

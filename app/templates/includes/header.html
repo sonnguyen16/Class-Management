@@ -16,13 +16,13 @@
     </div>
 
     <div class="profile">
-      <img src="{% static 'images/pic-1.jpg' %}" class="image" alt="" />
-      <h3 class="name">Nguyễn Văn Sơn</h3>
-      <p class="role">Student</p>
-      <a href="profile.html" class="btn">View profile</a>
+      <img src="{{ request.session.user.avatar_url }}" class="image object-fit-cover" style="width: 120px; height: 120px; border-radius: 50%" alt="" />
+      <h3 class="name">{{ request.session.user.full_name }}</h3>
+      <p class="role">{% if request.session.user.role == 0 %} Teacher {% else %} Student {% endif %}</p>
+      <a href="" class="btn">View profile</a>
       <div class="flex-btn">
-        <a href="login.html" class="option-btn bg bg-success">Join</a>
-        <a href="register.html" class="option-btn">Log out</a>
+        <a href="" class="option-btn bg bg-success">Join</a>
+        <a href="/logout" class="option-btn">Log out</a>
       </div>
     </div>
   </section>
