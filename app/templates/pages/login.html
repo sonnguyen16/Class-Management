@@ -1,0 +1,23 @@
+{% extends "layouts/auth.html" %} {% block content %} {% load static %}
+<section class="form-container flex-column">
+  <form action="/login" method="post" class="pb-3">
+    {% csrf_token %}
+    <h3>login now</h3>
+    <div class="form-group">
+      <p>Email <span>*</span></p>
+      <input type="email" name="email" placeholder="enter your email" required maxlength="50" class="form-control box" />
+    </div>
+    <div class="form-group mb-5">
+      <p>Password <span>*</span></p>
+      <input type="password" name="pass" placeholder="enter your password" required maxlength="20" class="form-control box" />
+    </div>
+    <input type="submit" value="login" name="submit" class="btn" />
+    <p class="text-center mt-3 mb-0">or login with Face ID</p>
+  </form>
+  <form action="/login/faceid" method="post" class="pt-0">
+    {% csrf_token %}
+    <button class="btn bg-success">Face ID</button>
+    <p class="text-center">Don't have an account ? <a href="/register" class="">Register</a></p>
+  </form>
+</section>
+{% endblock content %} {% block script %} {% endblock script %}

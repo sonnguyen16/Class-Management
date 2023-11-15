@@ -1,0 +1,120 @@
+{% extends "layouts/auth.html" %} {% block content %} {% load static %}
+<section class="form-container">
+  <form id="formRegister" method="post" enctype="multipart/form-data">
+    <h1 class="text-center">Register</h1>
+    {% csrf_token %}
+    <div class="form-group">
+      <p>Fullname <span>*</span></p>
+      <input type="text" class="form-control box" name="fullname" id="fullname" placeholder="Enter your full name" />
+    </div>
+    <div class="form-group">
+      <p>Date of birth <span>*</span></p>
+      <input type="date" class="form-control box" name="date_of_birth" id="date_of_birth" />
+    </div>
+    <div class="form-group">
+      <p>Face ID <span>*</span></p>
+      <input type="file" accept="image/*" class="form-control box" name="avatar" id="avatar" multiple />
+      <p class="">Maximum: 3 images or 1 capture. Only select images or capture</p>
+    </div>
+    <div class="form-group">
+      <div class="d-flex">
+        <button id="capture-btn" class="btn bg-success">Capture</button>
+      </div>
+      <input type="hidden" name="capture_link" name="capture_link" id="capture-link" value="" />
+      <img src="" id="capture-img" class="rounded-3 shadow object-fit-cover w-100 my-3" style="max-height: 300px" alt="" />
+    </div>
+    <button id="submit" type="submit" class="btn btn-primary form-control">Register</button>
+  </form>
+</section>
+{% endblock content %} {% block script %}
+<script>
+  $(document).ready(function () {
+    $("#capture-btn").click(function (e) {
+      if ($("#avatar").val()) {
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      $.ajax({
+        url: "/capture",
+        type: "GET",
+        success: function (response) {
+          $("#capture-link").val(response);
+          let file_name = response.split("\\").pop();
+          $("#capture-img").attr("src", "../static/data/" + file_name);
+        },
+        error: function (error) {
+          console.log(error);
+        },
+      });
+    });
+
+    $("#avatar").click(function (e) {
+      if ($("#capture-img").attr("src") !== "") {
+        e.preventDefault();
+        return;
+      }
+    });
+
+    $("#formRegister").validate({
+      rules: {
+        fullname: {
+          required: true,
+          minlength: 10,
+          maxlength: 50,
+        },
+        date_of_birth: {
+          required: true,
+        },
+      },
+      messages: {
+        fullname: {
+          required: "Please enter your full name",
+          minlength: "Your full name must be at least 10 characters long",
+          maxlength: "Your full name must be at most 50 characters long",
+        },
+        date_of_birth: {
+          required: "Please enter your date of birth",
+        },
+      },
+      errorElement: "span",
+      errorPlacement: function (error, element) {
+        error.addClass("invalid-feedback");
+        element.closest(".form-group").append(error);
+      },
+      highlight: function (element, errorClass, validClass) {
+        $(element).addClass("is-invalid");
+      },
+      unhighlight: function (element, errorClass, validClass) {
+        $(element).removeClass("is-invalid");
+      },
+      submitHandler: function (form) {
+        $("#submit").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+        $.ajax({
+          url: "/register",
+          type: "POST",
+          data: new FormData(form),
+          processData: false,
+          contentType: false,
+          success: function (data) {
+            $("#submit").html("Register");
+            <!-- use toastr -->
+            if (data.status == 200) {
+              toastr.success(data.message);
+              setTimeout(function () {
+                window.location.href = "/";
+              }, 1000);
+            } else {
+              toastr.error(data.message);
+            }
+          },
+          error: function (error) {
+            $("#submit").html("Register");
+            toastr.error("No face detected, please select other images or capture");
+          },
+        });
+      },
+    });
+  });
+</script>
+{% endblock script %}

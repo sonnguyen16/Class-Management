@@ -13,7 +13,8 @@ import cv2
 from datetime import datetime
 from PIL import Image
 from io import BytesIO
-import threading
+import asyncio
+import concurrent.futures 
 
 # Define the region, and developer key
 # SG: "https://sg.opencv.fr"
@@ -30,7 +31,7 @@ cascade_path = os.path.join(data_folder, 'haarcascade_frontalface_default.xml')
 clf = cv2.CascadeClassifier(str(cascade_path))
 
 def index(request):
-    return render(request, 'login.html')
+    return render(request, 'pages/index.html')
 
 def comparison(frame):
     search_request = SearchRequest([frame],collection_id=None,search_mode= SearchMode.FAST, min_score=0.7)
@@ -39,61 +40,57 @@ def comparison(frame):
 
 scans = []
 
-def detect(frame):
-    detect_request_without_search = DetectionRequest(frame)
-    scans = sdk.search.detect(detect_request_without_search) 
-    return scans
-     
+async def detect(frame):
+    global scans
+    search_options = SearchOptions(collection_id=None, search_mode=SearchMode.FAST, min_score=0.7)
+    detect_request_without_search = DetectionRequest(frame, search_options=search_options)
+    scans = sdk.search.detect(detect_request_without_search)
+
+def detect_in_executor(frame):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(detect(frame))
+
+def loginFaceId(request):
+    if request.method == 'POST':
+        global scans
+        names = []
+        capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        count = 0
+        detect = False
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            while True:
+                ret, frame = capture.read()
+                if len(scans) > 0:
+                    for scan in scans:
+                        cv2.rectangle(frame, (scan.box.left, scan.box.top), (scan.box.right, scan.box.bottom), (0, 255, 0), 2)
+                        if len(scan.persons) > 0:
+                            detect = True
+                            for person in scan.persons:
+                                cv2.putText(frame, unidecode(person.person.name), (scan.box.left, scan.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+                        else:
+                            detect = False
+                            cv2.putText(frame, "Unknown", (scan.box.left, scan.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(frame, "Press 'F' to register" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                
+                
+                cv2.imshow('Login FaceID', frame)
+                if count % 60 == 0:
+                    executor.submit(detect_in_executor, frame)
+                count += 1
+                
+                key = cv2.waitKey(1)
+                if key == ord('f'):
+                    break
+
+        cv2.destroyAllWindows()
+        capture.release()
+        if detect == False:
+            return HttpResponseRedirect('/register')
+        return render(request, 'pages/index.html')
 
 def login(request):
-    capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    detect = False
-    name = ''
-    message = ''
-    result = {}
-    while True:
-        ret, frame = capture.read()
-        key = cv2.waitKey(1)
-        if key == ord('f') and detect == True:
-            data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'data')
-            new_path = os.path.join(data_folder, unidecode(name) + str(time.time()) + '.jpg')
-            cv2.imwrite(new_path, frame)
-            break
-        faces = clf.detectMultiScale(
-            frame,
-            scaleFactor=1.1,
-            minNeighbors=7,
-            minSize=(80, 80),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        if len(faces) > 0:
-            for (x, y, w, h) in faces:
-                cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
-                cv2.putText(frame, unidecode (name) , (x,y - 20), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, message, (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        cv2.imshow('Login with FaceID', frame)
-        
-
-        if detect == False:
-            detect_request_without_search = DetectionRequest(frame)
-            scan = sdk.search.detect(detect_request_without_search) 
-
-            if scan:
-                try:
-                    result = comparison(frame)
-                    name = result[0].person.name
-                    message = "Press 'F' to continue"
-                except:
-                    name = 'Unknown'
-                    message = "Press 'F' to register"
-                detect = True
-            else:
-                continue
-    cv2.destroyAllWindows()
-    capture.release()
-    if name == 'Unknown':
-        return HttpResponseRedirect('/register')
-    return HttpResponse(result)
+    return render(request, 'pages/login.html')
 
 def register(request):
     if request.method == 'POST':
@@ -182,7 +179,7 @@ def register(request):
                 }
             )
 
-    return render(request, 'register.html')
+    return render(request, 'pages/register.html')
 
 def capture(request):
     capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -192,7 +189,7 @@ def capture(request):
         ret, frame = capture.read()
 
         key = cv2.waitKey(1)
-        if key == ord('f') and detect == True and len(faces) > 0:
+        if key == ord('f') and len(faces) > 0:
             data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'data')
             new_path = os.path.join(data_folder, str(time.time()) + '.jpg')
             cv2.imwrite(new_path, frame)
@@ -201,27 +198,18 @@ def capture(request):
         faces = clf.detectMultiScale(
             frame,
             scaleFactor=1.1,
-            minNeighbors=10,
+            minNeighbors=7,
             minSize=(100, 100),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
-        if detect == True and len(faces) > 0:
+        if len(faces) > 0:
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
                 cv2.putText(frame, "Press 'F' to capture" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         else:
             cv2.putText(frame, "Put your face in the webcam" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         cv2.imshow('Register FaceID', frame)
-        
 
-        if detect == False:
-            detect_request_without_search = DetectionRequest(frame)
-            scan = sdk.search.detect(detect_request_without_search) 
-
-            if scan:
-                detect = True
-            else:
-                continue
 
     cv2.destroyAllWindows()
     capture.release()
