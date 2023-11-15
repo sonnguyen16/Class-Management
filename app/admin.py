@@ -9,12 +9,12 @@ from django.contrib.auth.forms import UserChangeForm
 
 class CustomUserAdmin(admin.ModelAdmin):
     model = User
-    list_display = ('username', 'get_role')
+    list_display = ('email', 'get_role')
     add_form_template = 'admin/auth/user/add_form.html'
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'role'),
+            'fields': ('email', 'role'),
         }),
     )
     def get_role(self, obj):
