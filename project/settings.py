@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app.apps.AppConfig',
+    'teacher.apps.TeacherConfig',
     'rest_framework',
     'oauth2_provider',
 ]
@@ -59,7 +60,7 @@ ROOT_URLCONF = 'project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,9 +74,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'project.wsgi.app'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "app/static")]
-STATIC_URL = "app/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "app/staticfiles")
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

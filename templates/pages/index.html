@@ -1,0 +1,43 @@
+{% extends "layouts/base.html" %} {% block content %} {% load static %}
+
+<section class="courses">
+  <h1 class="heading mt-3">Your Classes</h1>
+  <div class="box-container">
+    {% if not classes %}
+    <div class="box">
+      <h3 class="heading text-center mb-0">You don't have any classes yet</h3>
+      <div class="more-btn mt-0">
+        <a data-bs-toggle="modal" data-bs-target="#create-class" class="inline-option-btn bg-success">Create Class</a>
+      </div>
+    </div>
+    {% else %} {% for class in classes %}
+    <div class="box">
+      <div class="tutor">
+        <img src="{{ class.created_by.avatar }}" alt="" />
+        <div class="info">
+          <h3>{{ class.created_by.full_name }}</h3>
+          <span>{{ class.created_by.email }}</span>
+        </div>
+      </div>
+      <div class="thumb">
+        {% if class.image == '' %}
+        <img src="{% static 'asset/images/thumb-1.png' %}" alt="" />
+        {% else %}
+        <img src="{{ class.image }}" alt="" />
+        {% endif %}
+        <span>{{ class.invite_code }}</span>
+      </div>
+      <h3 class="title">{{ class.name }}</h3>
+      <a href="/class/{{ class.id }}" class="inline-btn">view class</a>
+    </div>
+
+    {% endfor %} {% endif %}
+  </div>
+  {% if classes|length > 2 %}
+  <div class="more-btn">
+    <a href="/class" class="inline-option-btn mx-auto">view more</a>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock content %}

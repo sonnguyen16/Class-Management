@@ -8,7 +8,7 @@ class User(models.Model):
     date_of_birth = models.DateField(blank=True, default='2000-01-01')
     email = models.EmailField(max_length=254, blank=True, unique=True)
     password = models.CharField(max_length=128)
-    avatar = models.ImageField(upload_to='app/static/uploads/avatar', null=True, blank=True, default="static/images/pic-1.jpg")
+    avatar = models.ImageField(upload_to='app/static/uploads/avatar', null=True, blank=True)
     opencv_id = models.CharField(max_length=100 ,null=True, blank=True)
     role_choices = [
         (0, 'Giáo viên'),
@@ -31,45 +31,47 @@ class User(models.Model):
 
 class Class(models.Model):
     name = models.CharField(max_length=200)
-    created_by = models.CharField(max_length=150)
     invite_code = models.CharField(max_length=30, null=True, blank=True, default= shortuuid.uuid())
+    image = models.ImageField(upload_to='static/uploads/class', null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='classes')
     def __str__(self):
         return self.name
     
 
-
 class Attendance(models.Model):
-    image = models.ImageField(upload_to='app/static/uploads/attendance', blank=True)
+    image = models.ImageField(upload_to='static/uploads/attendance', blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     time = models.DateTimeField()
 
     def __str__(self):
         return self.user.full_name
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'image_url': self.image.url if self.image else None,
-            'user': self.user.to_dict(),
-            'time': str(self.time),
-        }
 
 class Homework(models.Model):
     class_id = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='homeworks')
     title = models.CharField(max_length=200)
     description = models.TextField()
-    image = models.ImageField(upload_to='app/static/uploads/homework', null=True, blank=True, default="static/images/thump-1.png")
-    file = models.FileField(upload_to='app/static/uploads/homework', null=True, blank=True)
+    image = models.ImageField(upload_to='static/uploads/homework', null=True, blank=True)
+    file = models.FileField(upload_to='static/uploads/homework', null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='homeworks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    deadline = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.title
 
 class DoHomework(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    homework = models.ForeignKey(Homework, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='app/static/uploads/homework')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dohomeworks')
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='dohomeworks')
+    file = models.FileField(upload_to='static/uploads/homework')
     score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True, default=None, validators=[MinValueValidator(0), MaxValueValidator(10)])
     comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.title
     
+class User_Class(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_classes')
+    class_id = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='user_classes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.user.full_name + ' - ' + self.class_id.name

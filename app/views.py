@@ -1,41 +1,40 @@
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from opencv.fr import FR
-from opencv.fr.compare.schemas import CompareRequest
-from opencv.fr.persons.schemas import PersonBase
-from opencv.fr.search.schemas import SearchMode, DetectionRequest, SearchOptions, SearchRequest
-from django.conf import settings
-from django.core.files.storage import default_storage
-from unidecode  import unidecode 
 import os
-import time
 import cv2
-from datetime import datetime
+import time
+import json
+import asyncio
 from PIL import Image
 from io import BytesIO
-import asyncio
 import concurrent.futures
+from datetime import datetime
+from django.shortcuts import render
 from .serializers import UserSerializer, AttendanceSerializer
-import json
+from .models import User, Class
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from opencv.fr import FR
+from opencv.fr.persons.schemas import PersonBase
+from opencv.fr.compare.schemas import CompareRequest
+from opencv.fr.search.schemas import SearchMode, DetectionRequest, SearchOptions, SearchRequest
+from django.conf import settings
+from unidecode import unidecode 
 
-# Define the region, and developer key
-# SG: "https://sg.opencv.fr"
-# US: "https://us.opencv.fr"
-# EU: "https://eu.opencv.fr"
 
 BACKEND_URL = "https://sg.opencv.fr"
 DEVELOPER_KEY = "8z1Rw-fMTcxN2ZjZmEtMDFkMy00Y2JiLThkY2UtYjdiNDkzZDJiZGU2"
 
 # Initialize the SDK
 sdk = FR(BACKEND_URL, DEVELOPER_KEY)
-data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'data')
+data_folder = os.path.join(settings.BASE_DIR, 'static', 'data')
 cascade_path = os.path.join(data_folder, 'haarcascade_frontalface_default.xml')
 clf = cv2.CascadeClassifier(str(cascade_path))
 
 def index(request):
-    if request.session['user']:
-        return render(request, 'pages/index.html')
+    user = request.session.get('user')
+    if user is not None:
+        classes = User.objects.get(id=user['id']).classes.all()
+        return render(request, 'pages/index.html', {'classes': classes})
     return HttpResponseRedirect('/login')
+
 
 def comparison(frame):
     search_request = SearchRequest([frame],collection_id=None,search_mode= SearchMode.FAST, min_score=0.7)
@@ -75,23 +74,24 @@ def loginFaceId(request):
                 key = cv2.waitKey(1)
                 if key == ord('f'):
                     # Save frame as image
-                    data_folder = os.path.join(settings.BASE_DIR, 'app/static/uploads/attendances')
+                    data_folder = os.path.join(settings.BASE_DIR, 'static/uploads/attendances')
                     new_path = os.path.join(data_folder, str(time.time()) + '.jpg')
                     cv2.imwrite(new_path, frame)
                     break
                 if len(scans) > 0:
-                    for scan in scans:
-                        cv2.rectangle(frame, (scan.box.left, scan.box.top), (scan.box.right, scan.box.bottom), (0, 255, 0), 2)
-                        if len(scan.persons) > 0:
+                    for sc in scans:
+                        cv2.rectangle(frame, (sc.box.left, sc.box.top), (sc.box.right, sc.box.bottom), (0, 255, 0), 2)
+                        if len(sc.persons) > 0:
                             detect = True
-                            scan = scan
+                            scan = sc
                             cv2.putText(frame, "Press 'F' to continue" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
                             for person in scan.persons:
-                                cv2.putText(frame, unidecode(person.person.name), (scan.box.left, scan.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+                                cv2.putText(frame, unidecode(person.person.name), (sc.box.left, sc.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
                         else:
                             detect = False
-                            cv2.putText(frame, "Unknown", (scan.box.left, scan.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-                            cv2.putText(frame, "Press 'F' to register" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(frame, "Unknown", (sc.box.left, sc.box.top - 10), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+                            if scan == []:
+                                cv2.putText(frame, "Press 'F' to register" , (10,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
                 
                 
                 cv2.imshow('Login FaceID', frame)
@@ -105,15 +105,45 @@ def loginFaceId(request):
             return HttpResponseRedirect('/register')
         user = user_serializer.get_user_by_opencvid(scan.persons[0].person.id)
         request.session['user'] = user
-        attendance = {
-            'image': new_path.split('project\\')[1],
-            'user': user_serializer.get_user(user['id']),
-            'time': datetime.now()
-        }
-        attendance_serializer.create(attendance)
+        try:
+            attendance = {
+                'image': new_path.split('project\\')[1],
+                'user': user_serializer.get_user(user['id']),
+                'time': datetime.now()
+            }
+            attendance_serializer.create(attendance)
+        except:
+            return HttpResponseRedirect('/register')
         return HttpResponseRedirect('/')
 
 def login(request):
+    if request.method == "POST":
+        user_serializer = UserSerializer()
+        email = request.POST['email']
+        password = request.POST['password']
+        user = user_serializer.get_user_by_email(email)
+        print(user)
+        if user is None:
+            return JsonResponse(
+                {
+                    'status': '422',
+                    'message': 'Email does not exist'
+                }
+            )
+        if user.password != password:
+            return JsonResponse(
+                {
+                    'status': '422',
+                    'message': 'Password is incorrect'
+                }
+            )
+        request.session['user'] = user.to_dict()
+        return JsonResponse(
+            {
+                'status': '200',
+                'message': 'Login successfully'
+            }
+        )
     return render(request, 'pages/login.html')
 
 def register(request):
@@ -175,17 +205,8 @@ def register(request):
                         'message': 'No face detected, please select other images or capture'
                     }
                 )
-                    
-        search_result = comparison(images[0])
-        if search_result:
-            return JsonResponse(
-                {
-                    'status': '422',
-                    'message': 'Person are already registered'
-                }
-            )
        
-        data_folder = os.path.join(settings.BASE_DIR, 'app/static/uploads/avatar')
+        data_folder = os.path.join(settings.BASE_DIR, 'static/uploads/avatar')
         avatar = full_name + str(time.time()) + '.jpg'
         new_path = os.path.join(data_folder, avatar)
         if capture_link:
@@ -199,21 +220,27 @@ def register(request):
             im.save(new_path)
             new_path = new_path.split('project\\')[1]
 
-        try:
-            person = PersonBase(
-                name=full_name,
-                date_of_birth=date_of_birth,
-                nationality=nationality,
-                images=images
-            )
-            result = sdk.persons.create(person)
-        except Exception as e:
-            return JsonResponse(
-                {
-                    'status': '422',
-                    'message': e
-                }
-            )
+        search_result = comparison(images[0])
+        id = ''
+        if not search_result:
+            try:
+                person = PersonBase(
+                    name=full_name,
+                    date_of_birth=date_of_birth,
+                    nationality=nationality,
+                    images=images
+                )
+                result = sdk.persons.create(person)
+                id = result.id
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        'status': '422',
+                        'message': e
+                    }
+                )
+        else:
+            id = search_result[0].person.id
         
         try:
             user = {
@@ -223,7 +250,7 @@ def register(request):
                 'role': role,
                 'date_of_birth': date_of_birth,
                 'avatar': new_path,
-                'opencv_id': result.id
+                'opencv_id': id
             }
             user_serializer.create(user)
         except Exception as e:
@@ -235,7 +262,8 @@ def register(request):
                     'message': json_error.replace('"', '')
                 }
             )
-        request.session['user'] = user_serializer.get_user_by_opencvid(result.id)
+        user = user_serializer.get_user_by_opencvid(id)
+        request.session['user'] = user
         return JsonResponse(
             {
                 'status': '200',
@@ -253,7 +281,7 @@ def capture(request):
 
         key = cv2.waitKey(1)
         if key == ord('f') and len(faces) > 0:
-            data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'data')
+            data_folder = os.path.join(settings.BASE_DIR, 'static', 'data')
             new_path = os.path.join(data_folder, str(time.time()) + '.jpg')
             cv2.imwrite(new_path, frame)
             break
@@ -281,6 +309,79 @@ def attendance(request):
     attendance_serializer = AttendanceSerializer()
     attendances = attendance_serializer.get_attendance()
     return render(request, 'pages/attendance.html', {'attendances': attendances})
+
+def update_profile(request):
+    id = request.session.get('user')['id']
+    full_name = request.POST['full_name']
+    email = request.POST['email']
+    password = request.POST['password']
+    avatar = request.FILES.getlist('avatar')
+    date_of_birth = datetime.strptime(request.POST['date_of_birth'], "%Y-%m-%d")
+    user_serializer = UserSerializer()
+
+    instance = user_serializer.get_user(id)
+    new_path = instance.avatar
+    if avatar:
+        data_folder = os.path.join(settings.BASE_DIR, 'static/uploads/avatar')
+        avatar = full_name + str(time.time()) + '.jpg'
+        new_path = os.path.join(data_folder, avatar)
+        with open(new_path, 'wb') as f:
+            for chunk in request.FILES['avatar'].chunks():
+                f.write(chunk)
+
+        im = Image.open(new_path)
+        im.save(new_path)
+        new_path = new_path.split('project\\')[1]
+
+    if password != '':
+        if len(password) < 6:
+            return JsonResponse(
+                {
+                    'status': '422',
+                    'message': 'Password must be at least 8 characters'
+                }
+            )
+        user = {
+            'full_name': full_name,
+            'email': email,
+            'password': password,
+            'date_of_birth': date_of_birth,
+            'avatar': new_path
+        }
+    else:
+        user = {
+            'full_name': full_name,
+            'email': email,
+            'date_of_birth': date_of_birth,
+            'avatar': new_path
+        }
+    print(user)
+    user_serializer.update(instance, user)
+    request.session['user'] = user_serializer.get_user(id).to_dict()
+    return JsonResponse(
+        {
+            'status': '200',
+            'message': 'Update successfully'
+        }
+    )
+
+def classes(request):
+    user = request.session.get('user')
+    if user is not None:
+        classes = User.objects.get(id=user['id']).classes.all()
+        return render(request, 'pages/class.html', {'classes': classes})
+    return HttpResponseRedirect('/login')
+
+def class_detail(request, class_id):
+    cls = Class.objects.get(id=class_id)
+    homeworks = cls.homeworks.all()
+    return render(request, 'pages/class_detail.html', {'class': cls, 'homeworks': homeworks})
+
+
+
+
+
+
 
 
 

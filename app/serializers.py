@@ -23,6 +23,12 @@ class UserSerializer(ModelSerializer):
         except User.DoesNotExist:
             return None
         
+    def get_user_by_email(self, email):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+        
 class AttendanceSerializer(ModelSerializer):
     class Meta:
         model = Attendance
