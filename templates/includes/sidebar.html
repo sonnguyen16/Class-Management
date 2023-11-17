@@ -19,11 +19,8 @@
   <nav class="navbar d-flex flex-column align-items-baseline">
     <a class="nav-link" href="/"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
     <a class="nav-link" href="/class"><i class="fas fa-restroom nav-icon"></i><span>Classes</span></a>
-    <a class="nav-link" href=""><i class="fas fa-chalkboard-user nav-icon"></i><span>Homework</span></a>
     {% if request.session.user.role == 0 %}
     <a class="nav-link" href="/attendance"><i class="fas fa-graduation-cap nav-icon"></i><span>Attendance</span></a>
-    {% else %}
-    <a class="nav-link" href=""><i class="fas fa-graduation-cap nav-icon"></i><span>Classmate</span></a>
     {% endif %}
     <a class="nav-link" href=""><i class="fas fa-book nav-icon"></i><span>Meeting</span></a>
   </nav>

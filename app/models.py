@@ -40,7 +40,7 @@ class Class(models.Model):
 
 class Attendance(models.Model):
     image = models.ImageField(upload_to='static/uploads/attendance', blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attendances')
     time = models.DateTimeField()
 
     def __str__(self):
@@ -64,10 +64,10 @@ class DoHomework(models.Model):
     homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='dohomeworks')
     file = models.FileField(upload_to='static/uploads/homework')
     score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True, default=None, validators=[MinValueValidator(0), MaxValueValidator(10)])
-    comment = models.TextField()
+    comment = models.TextField(null=True, blank=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return self.title
+        return ''
     
 class User_Class(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_classes')

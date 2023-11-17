@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app.apps.AppConfig',
     'teacher.apps.TeacherConfig',
+    'student.apps.StudentConfig',
     'rest_framework',
     'oauth2_provider',
 ]

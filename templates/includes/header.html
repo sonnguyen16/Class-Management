@@ -16,12 +16,19 @@
     </div>
 
     <div class="profile">
-      <img src="{{ request.session.user.avatar_url }}" class="image object-fit-cover" style="width: 120px; height: 120px; border-radius: 50%" alt="" />
+      <img
+        src="{{ request.session.user.avatar_url }}"
+        class="image object-fit-cover"
+        style="width: 120px; height: 120px; border-radius: 50%"
+        alt=""
+      />
       <h3 class="name">{{ request.session.user.full_name }}</h3>
       <p class="role">{% if request.session.user.role == 0 %} Teacher {% else %} Student {% endif %}</p>
       <a href="#" class="btn" data-bs-toggle="modal" data-bs-target="#update-user-info-modal">view profile</a>
       <div class="flex-btn">
-        <a href="" class="option-btn bg bg-success">Join</a>
+        {% if request.session.user.role == 1 %}
+        <a href="" data-bs-toggle="modal" data-bs-target="#join-class" class="option-btn bg bg-success">Join</a>
+        {% endif %}
         <a href="/logout" class="option-btn">Log out</a>
       </div>
     </div>

@@ -1,6 +1,13 @@
 {% extends "layouts/auth.html" %} {% block content %} {% load static %}
 <section class="form-container flex-column">
-  <form id="loginForm" method="post" class="pb-3 shadow" style="border-bottom-left-radius: 0px; border-bottom-right-radius: 0px" novalidate onsubmit="false">
+  <form
+    id="loginForm"
+    method="post"
+    class="pb-3 shadow"
+    style="border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
+    novalidate
+    onsubmit="false"
+  >
     {% csrf_token %}
     <h3>login now</h3>
     <div class="form-group">
@@ -54,6 +61,8 @@
         $(element).removeClass("is-invalid");
       },
       submitHandler: function (form) {
+        <!-- disable btn submit -->
+        $("#submit").attr("disabled", true);
         $("#submit").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
         $.ajax({
           url: "/login",
@@ -69,10 +78,12 @@
                 window.location.href = "/";
               }, 1000);
             } else {
+              $("#submit").attr("disabled", false);
               toastr.error(response.message);
             }
           },
           error: function (error) {
+            $("#submit").attr("disabled", false);
             $("#submit").html("Login");
             toastr.error("Something went wrong");
           },

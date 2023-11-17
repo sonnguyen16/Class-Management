@@ -9,7 +9,7 @@ import concurrent.futures
 from datetime import datetime
 from django.shortcuts import render
 from .serializers import UserSerializer, AttendanceSerializer
-from .models import User, Class
+from .models import User, Class, User_Class, Homework
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from opencv.fr import FR
 from opencv.fr.persons.schemas import PersonBase
@@ -17,7 +17,6 @@ from opencv.fr.compare.schemas import CompareRequest
 from opencv.fr.search.schemas import SearchMode, DetectionRequest, SearchOptions, SearchRequest
 from django.conf import settings
 from unidecode import unidecode 
-
 
 BACKEND_URL = "https://sg.opencv.fr"
 DEVELOPER_KEY = "8z1Rw-fMTcxN2ZjZmEtMDFkMy00Y2JiLThkY2UtYjdiNDkzZDJiZGU2"
@@ -31,7 +30,11 @@ clf = cv2.CascadeClassifier(str(cascade_path))
 def index(request):
     user = request.session.get('user')
     if user is not None:
-        classes = User.objects.get(id=user['id']).classes.all()
+        # check role
+        if user['role'] == 0:
+            classes = User.objects.get(id=user['id']).classes.all()[:3]
+        else:
+            classes = User_Class.objects.filter(user=User.objects.get(id = user['id']))[:3]
         return render(request, 'pages/index.html', {'classes': classes})
     return HttpResponseRedirect('/login')
 
@@ -122,7 +125,6 @@ def login(request):
         email = request.POST['email']
         password = request.POST['password']
         user = user_serializer.get_user_by_email(email)
-        print(user)
         if user is None:
             return JsonResponse(
                 {
@@ -306,9 +308,22 @@ def capture(request):
     return HttpResponse(new_path)
 
 def attendance(request):
-    attendance_serializer = AttendanceSerializer()
-    attendances = attendance_serializer.get_attendance()
+    classes = Class.objects.filter(created_by=User.objects.get(id=request.session.get('user')['id']))
+    unique_students = set()
+
+    for cls in classes:
+        user_classes = User_Class.objects.filter(class_id=cls.id)
+        unique_students.update(user_class.user for user_class in user_classes)
+
+    attendances = []
+    
+    for student in unique_students:
+        attendances += student.attendances.all()
+
     return render(request, 'pages/attendance.html', {'attendances': attendances})
+
+
+
 
 def update_profile(request):
     id = request.session.get('user')['id']
@@ -355,7 +370,6 @@ def update_profile(request):
             'date_of_birth': date_of_birth,
             'avatar': new_path
         }
-    print(user)
     user_serializer.update(instance, user)
     request.session['user'] = user_serializer.get_user(id).to_dict()
     return JsonResponse(
@@ -368,14 +382,42 @@ def update_profile(request):
 def classes(request):
     user = request.session.get('user')
     if user is not None:
-        classes = User.objects.get(id=user['id']).classes.all()
+        # check role
+        if user['role'] == 0:
+            classes = User.objects.get(id=user['id']).classes.all()
+        else:
+            classes = User_Class.objects.filter(user=User.objects.get(id = user['id']))
         return render(request, 'pages/class.html', {'classes': classes})
     return HttpResponseRedirect('/login')
 
 def class_detail(request, class_id):
-    cls = Class.objects.get(id=class_id)
-    homeworks = cls.homeworks.all()
-    return render(request, 'pages/class_detail.html', {'class': cls, 'homeworks': homeworks})
+    user = request.session.get('user')
+    if user is not None:
+        cls = Class.objects.get(id=class_id)
+        homeworks = cls.homeworks.all()
+        return render(request, 'pages/class_detail.html', {'class': cls, 'homeworks': homeworks})
+    return HttpResponseRedirect('/login')
+
+def students(request, class_id):
+    user = request.session.get('user')
+    if user is not None:
+        students = User_Class.objects.filter(class_id=class_id)
+        name = request.POST.get('name', None)
+        if name is not None:
+            students = students.filter(user__full_name__icontains=name)
+        return render(request, 'pages/students.html', {'students': students})
+    return HttpResponseRedirect('/login')
+
+def homework_detail(request, homework_id):
+    user = request.session.get('user')
+    if user is not None:
+        homework = Homework.objects.get(id=homework_id)
+        submitted = homework.dohomeworks.all()
+        name = request.POST.get('name', None)
+        if name is not None:
+            submitted = submitted.filter(user__full_name__icontains=name)
+        return render(request, 'pages/homework_detail.html', {'homework': homework, 'submitted': submitted})
+    return HttpResponseRedirect('/login')
 
 
 
