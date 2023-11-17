@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'app.apps.AppConfig',
     'teacher.apps.TeacherConfig',
     'student.apps.StudentConfig',
+    'realt.apps.RealtConfig',
     'rest_framework',
     'oauth2_provider',
 ]

@@ -9,7 +9,7 @@ import concurrent.futures
 from datetime import datetime
 from django.shortcuts import render
 from .serializers import UserSerializer, AttendanceSerializer
-from .models import User, Class, User_Class, Homework
+from .models import User, Class, User_Class, Homework, Notification
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from opencv.fr import FR
 from opencv.fr.persons.schemas import PersonBase
@@ -35,7 +35,8 @@ def index(request):
             classes = User.objects.get(id=user['id']).classes.all()[:3]
         else:
             classes = User_Class.objects.filter(user=User.objects.get(id = user['id']))[:3]
-        return render(request, 'pages/index.html', {'classes': classes})
+        notifications = Notification.objects.filter(user=User.objects.get(id = user['id']))[:4]
+        return render(request, 'pages/index.html', {'classes': classes, 'notifications': notifications})
     return HttpResponseRedirect('/login')
 
 

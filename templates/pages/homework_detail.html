@@ -91,7 +91,7 @@
             <h3 class="modal-title" id="update-user-info-modal-label">Submit Homework</h3>
           </div>
           <div class="modal-body">
-            <input type="hidden" value="{{ homework.id }}" name="homework_id" />
+            <input type="hidden" id="homework_id" value="{{ homework.id }}" name="homework_id" />
             <input type="hidden" value="{{ request.session.user.id }}" name="user_id" />
             <div class="form-group">
               <p>File</p>

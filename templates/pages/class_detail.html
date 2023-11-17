@@ -25,8 +25,8 @@
       <div class="details">
         <h3>{{ class.name }}</h3>
         <p class="mb-0">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum minus reiciendis, error sunt veritatis exercitationem
-          deserunt velit doloribus itaque voluptate.
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum minus reiciendis, error sunt veritatis exercitationem deserunt velit
+          doloribus itaque voluptate.
         </p>
         <a href="/class/{{ class.id }}/students" class="inline-btn">view students</a>
       </div>
@@ -78,7 +78,7 @@
             <h3 class="modal-title" id="update-user-info-modal-label">Create Homework</h3>
           </div>
           <div class="modal-body">
-            <input type="hidden" value="{{ class.id }}" name="class_id" />
+            <input type="hidden" id="class_id" value="{{ class.id }}" name="class_id" />
             <div class="form-group">
               <p>Title</p>
               <input type="text" class="form-control box" id="title" name="title" value="" required />

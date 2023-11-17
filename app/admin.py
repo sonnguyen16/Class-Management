@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.forms import Textarea
-from .models import Class, User, Attendance, Homework, DoHomework, User_Class
+from .models import Class, User, Attendance, Homework, DoHomework, User_Class, Notification
 from django.contrib.auth.admin import UserAdmin
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -39,6 +39,10 @@ class User_ClassAdmin(admin.ModelAdmin):
     list_display = ['user_id', 'class_id']
     search_fields = ['user_id__email', 'class_id__class_name']
 
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'content', 'link', 'created_at']
+    search_fields = ['user__email', 'content']
+
 # Đăng ký custom UserAdmin
 # Đăng ký User trước khi hủy đăng ký
 admin.site.register(User, UserAdmin)
@@ -53,3 +57,4 @@ admin.site.register(Attendance, AttendanceAdmin)
 admin.site.register(Homework, HomeworkAdmin)
 admin.site.register(DoHomework, DoHomeworkAdmin)
 admin.site.register(User_Class, User_ClassAdmin)
+admin.site.register(Notification, NotificationAdmin)

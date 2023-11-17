@@ -1,6 +1,22 @@
 {% extends "layouts/base.html" %} {% block content %} {% load static %}
 
 <section class="courses">
+  <h1 class="heading mt-3">Notifications</h1>
+  <div class="box-container">
+    <div id="noti" class="box">
+      {% if notifications %} {% for noti in notifications %}
+      <a href="{{ noti.link }}" class="d-flex justify-content-between">
+        <p class="fs-3"><i class="fas fa-bell"></i> {{ noti.content }}</p>
+        <p class="fs-3 text-secondary">{{ noti.created_at }}</p>
+      </a>
+      {% endfor %} {% else %}
+      <p class="fs-2 text-center">No notification</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="courses">
   <h1 class="heading mt-3">Your Classes</h1>
   <div class="box-container">
     {% if not classes %}
