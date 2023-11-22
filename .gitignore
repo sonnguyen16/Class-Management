@@ -1,1 +1,8 @@
 /Class-Management-venv/
+/venv/
+app/__pycache__/urls.cpython-311.pyc
+app/__pycache__/views.cpython-311.pyc
+app/__pycache__/admin.cpython-311.pyc
+app/__pycache__/models.cpython-311.pyc
+app/__pycache__/serializers.cpython-311.pyc
+

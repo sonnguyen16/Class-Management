@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %} {% block content %} {% load static %}
+<section class="playlist-details">
+  <h1 class="heading">Attendances</h1>
+
+  <div class="row">
+    <table class="table" style="font-size: 1.5rem">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Time</th>
+          <th>Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attendance in attendances %}
+        <tr>
+          <td>{{ attendance.user.full_name }}</td>
+          <td>{{ attendance.time }}</td>
+          <td><img src="{{ attendance.image }}" class="rounded object-fit-cover" alt="" width="200px" height="150px" /></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock content %} {% block script %} {% endblock script %}

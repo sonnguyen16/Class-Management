@@ -1,0 +1,217 @@
+{% extends "layouts/base.html" %} {% block content %} {% load static %}
+
+<section class="playlist-details">
+  <h1 class="heading">Homework details</h1>
+  <div class="row">
+    <div class="column">
+      <div class="thumb">
+        {% if homework.image == '' %}
+        <img src="{% static 'asset/images/thumb-2.png' %}" alt="" />
+        {% else %}
+        <img src="/{{ homework.image }}" alt="" />
+        {% endif %}
+      </div>
+    </div>
+    <div class="column">
+      <div class="tutor">
+        <img src="/{{ homework.created_by.avatar }}" alt="" />
+        <div>
+          <h3>{{ homework.created_by.full_name }}</h3>
+          <span>{{ homework.created_by.email }}</span>
+        </div>
+      </div>
+
+      <div class="details">
+        <h3>{{ homework.title }}</h3>
+        <h3 class="mb-0 p-0">
+          {{ homework.description }} {% if homework.file != '' %}
+          <a href="/{{ homework.file }}" target="_blank"> @File đính kèm</a>
+          {% endif %}
+        </h3>
+        <p class="mb-0 p-0">Created at: {{ homework.created_at }}</p>
+        <p class="mb-0 p-0">Deadline at: {{ homework.deadline }}</p>
+        {% if request.session.user.role == 0 %}
+        <a href="" data-bs-target="#update-homework" data-bs-toggle="modal" class="inline-btn">Edit</a>
+        {% else %}
+        <a href="" data-bs-target="#submit-homework" data-bs-toggle="modal" class="inline-btn">Submit</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="teachers">
+  <h1 class="heading">Submitted</h1>
+
+  <form action="" method="post" class="search-tutor" novalidate>
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="search students..." required maxlength="100" />
+    <button type="submit" class="fas fa-search" name="search_tutor"></button>
+  </form>
+
+  <div class="box-container">
+    {% if submitted %} {% for sb in submitted %}
+    <div class="box">
+      <div class="tutor">
+        <img src="/{{ sb.user.avatar }}" class="object-fit-cover" alt="" />
+        <div>
+          <h3>{{ sb.user.full_name }}</h3>
+          <span>{{ sb.user.email }}</span>
+          <br />
+          <span>Submitted at: {{ sb.created_at }}</span>
+        </div>
+      </div>
+      <div class="details">
+        <p class="mb-0 p-0">
+          Score: {% if sb.user.id == request.session.user.id or request.session.user.role == 0 %} {{ sb.score }} {% else %} *** {% endif %}
+        </p>
+        <p>Comment: {% if sb.user.id == request.session.user.id or request.session.user.role == 0 %} {{ sb.comment }} {% else %} *** {% endif %}</p>
+      </div>
+      {% if request.session.user.role == 0 %}
+      <a href="/{{ sb.file }}" class="inline-btn">view</a>
+      {% csrf_token %}
+      <a onclick="getHomework(this)" data-dohomework-id="{{ sb.id }}" class="inline-btn bg-success">score</a>
+      {% endif %}
+    </div>
+    {% endfor %} {% else %}
+    <div class="box">
+      <h3 class="heading text-center mb-0">Homework don't have any submit yet</h3>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="modal fade" id="submit-homework" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="form-container" style="min-height: 0">
+        <form id="submitHomework" method="post" enctype="multipart/form-data" onsubmit="return false" novalidate>
+          {% csrf_token %}
+          <div class="modal-header">
+            <h3 class="modal-title" id="update-user-info-modal-label">Submit Homework</h3>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="homework_id" value="{{ homework.id }}" name="homework_id" />
+            <input type="hidden" value="{{ request.session.user.id }}" name="user_id" />
+            <div class="form-group">
+              <p>File</p>
+              <input type="file" accept=".docx" class="form-control box" id="file" name="file" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn bg-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="score-homework" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="form-container" style="min-height: 0">
+        <form id="scoreHomework" method="post" enctype="multipart/form-data" onsubmit="return false" novalidate>
+          {% csrf_token %}
+          <div class="modal-header">
+            <h3 class="modal-title" id="update-user-info-modal-label">Score Homework</h3>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" value="" id="dohomework_id" name="dohomework_id" />
+            <div class="form-group">
+              <p>Score</p>
+              <input type="number" class="form-control box" id="score" name="score" />
+            </div>
+            <div class="form-group">
+              <p>Comment</p>
+              <textarea type="text" class="form-control box" id="comment" name="comment"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn bg-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="update-homework" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="form-container" style="min-height: 0">
+        <form id="updateHomework" method="post" enctype="multipart/form-data" onsubmit="return false" novalidate>
+          {% csrf_token %}
+          <div class="modal-header">
+            <h3 class="modal-title" id="update-user-info-modal-label">Update Homework</h3>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" value="{{ homework.id }}" name="homework_id" />
+            <div class="form-group">
+              <p>Title</p>
+              <input type="text" class="form-control box" id="title" name="title" value="{{ homework.title }}" required />
+            </div>
+            <div class="form-group">
+              <p>Description</p>
+              <textarea type="text" class="form-control box" id="description" name="description" value="" required>
+{{ homework.description }}</textarea
+              >
+            </div>
+            <div class="form-group">
+              <p>Image</p>
+              <input accept="image/*" type="file" class="form-control box" id="image" name="image" />
+            </div>
+            <div class="form-group">
+              <p>File</p>
+              <input type="file" accept=".docx" class="form-control box" id="file" name="file" />
+            </div>
+            <div class="form-group">
+              <p>Deadline</p>
+              <input type="datetime-local" class="form-control box" id="deadline" name="deadline" value="{{ homework.deadline }}" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn bg-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %} {% block script %}
+<script>
+  function getHomework(a) {
+    let dohomework_id = $(a).data("dohomework-id");
+    // search by name of input
+    let csrfmiddlewaretoken = $("input[name=csrfmiddlewaretoken]").val();
+
+    $.ajax({
+      url: "/teacher/get_homework",
+      type: "POST",
+      headers: {
+        "X-CSRFToken": csrfmiddlewaretoken,
+      },
+      data: {
+        dohomework_id: dohomework_id,
+      },
+      success: function (response) {
+        if (response.status == "200") {
+          $("#score-homework").modal("show");
+          $("#dohomework_id").val(response.data.id);
+          $("#score").val(response.data.score);
+          $("#comment").val(response.data.comment);
+          console.log(response.data);
+        } else {
+          toastr.error(response.message);
+        }
+      },
+      error: function (error) {
+        toastr.error("Something went wrong");
+      },
+    });
+  }
+</script>
+{% endblock script %}
