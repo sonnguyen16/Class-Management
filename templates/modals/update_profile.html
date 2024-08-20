@@ -1,0 +1,41 @@
+<div class="modal fade" id="update-user-info-modal" tabindex="-1" role="dialog" aria-labelledby="update-user-info-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="form-container" style="min-height: 0">
+        <form id="updateForm" method="post" enctype="multipart/form-data" onsubmit="return false" novalidate>
+          {% csrf_token %}
+          <div class="modal-header">
+            <h3 class="modal-title" id="update-user-info-modal-label">Update User Info</h3>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" value="{{ request.session.user.id }}" />
+            <div class="form-group">
+              <p>Full Name</p>
+              <input type="text" class="form-control box" id="full_name" name="full_name" value="{{ request.session.user.full_name }}" required />
+            </div>
+            <div class="form-group">
+              <p>Email</p>
+              <input type="email" class="form-control box" id="email" name="email" value="{{ request.session.user.email }}" required />
+            </div>
+            <div class="form-group">
+              <p>Date of birth</p>
+              <input type="date" class="form-control box" id="date_of_birth" name="date_of_birth" value="{{ request.session.user.date_of_birth }}" required />
+            </div>
+            <div class="form-group">
+              <p>Avatar</p>
+              <input accept="image/*" type="file" class="form-control box" id="avatar" name="avatar" />
+            </div>
+            <div class="form-group">
+              <p>Password</p>
+              <input type="password" class="form-control box" id="password" name="password" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn bg-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

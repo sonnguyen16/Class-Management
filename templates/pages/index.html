@@ -1,0 +1,82 @@
+{% extends "layouts/base.html" %} {% block content %} {% load static %}
+
+<section class="courses">
+  <h1 class="heading mt-3">Notifications</h1>
+  <div class="box-container">
+    <div id="noti" class="box">
+      {% if notifications %} {% for noti in notifications %}
+      <a href="{{ noti.link }}" class="d-flex justify-content-between">
+        <p class="fs-3"><i class="fas fa-bell"></i> {{ noti.content }}</p>
+        <p class="fs-3 text-secondary">{{ noti.created_at }}</p>
+      </a>
+      {% endfor %} {% else %}
+      <p class="fs-2 text-center">No notification</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="courses">
+  <h1 class="heading mt-3">Your Classes</h1>
+  <div class="box-container">
+    {% if not classes %}
+    <div class="box">
+      <h3 class="heading text-center mb-0">You don't have any classes yet</h3>
+      <div class="more-btn mt-0">
+        {% if request.session.user.id == 0 %}
+        <a data-bs-toggle="modal" data-bs-target="#create-class" class="inline-option-btn bg-success">Create Class</a>
+        {% else %}
+        <a data-bs-toggle="modal" data-bs-target="#join-class" class="inline-option-btn bg-success">Join Class</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %} {% for class in classes %} {% if request.session.user.role == 0 %}
+    <div class="box">
+      <div class="tutor">
+        <img src="{{ class.created_by.avatar }}" alt="" />
+        <div class="info">
+          <h3>{{ class.created_by.full_name }}</h3>
+          <span>{{ class.created_by.email }}</span>
+        </div>
+      </div>
+      <div class="thumb">
+        {% if class.image == '' %}
+        <img src="{% static 'asset/images/thumb-1.png' %}" alt="" />
+        {% else %}
+        <img src="{{ class.image }}" alt="" />
+        {% endif %}
+        <span>{{ class.invite_code }}</span>
+      </div>
+      <h3 class="title">{{ class.name }}</h3>
+      <a href="/class/{{ class.id }}" class="inline-btn">view class</a>
+    </div>
+    {% else %}
+    <div class="box">
+      <div class="tutor">
+        <img src="{{ class.class_id.created_by.avatar }}" alt="" />
+        <div class="info">
+          <h3>{{ class.class_id.created_by.full_name }}</h3>
+          <span>{{ class.class_id.created_by.email }}</span>
+        </div>
+      </div>
+      <div class="thumb">
+        {% if class.class_id.image == '' %}
+        <img src="{% static 'asset/images/thumb-1.png' %}" alt="" />
+        {% else %}
+        <img src="{{ class.class_id.image }}" alt="" />
+        {% endif %}
+        <span>{{ class.class_id.invite_code }}</span>
+      </div>
+      <h3 class="title">{{ class.class_id.name }}</h3>
+      <a href="/class/{{ class.class_id.id }}" class="inline-btn">view class</a>
+    </div>
+    {% endif %} {% endfor %} {% endif %}
+  </div>
+  {% if classes|length > 2 %}
+  <div class="more-btn">
+    <a href="/class" class="inline-option-btn mx-auto">view more</a>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock content %}
